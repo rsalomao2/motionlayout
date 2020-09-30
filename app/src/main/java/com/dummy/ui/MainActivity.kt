@@ -17,17 +17,5 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val downloadFileUseCase = DownloadFileUseCase()
-        val testResultController = TestsController()
-        val pdfExportUseCase = PDFExportUseCaseImpl(downloadFileUseCase, testResultController)
-        buttonTv.setOnClickListener { view ->
-            Toast.makeText(this, "Click", Toast.LENGTH_SHORT).show()
-            GlobalScope.launch(Dispatchers.IO) {
-                val resultsPdf = pdfExportUseCase.getResultsPdf()
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(view.context, resultsPdf, Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
     }
 }

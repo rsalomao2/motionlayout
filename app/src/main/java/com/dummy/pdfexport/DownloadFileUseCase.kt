@@ -2,6 +2,8 @@ package com.dummy.pdfexport
 
 import android.os.Environment
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.*
 import java.net.MalformedURLException
 import java.net.URL
@@ -9,8 +11,8 @@ import java.net.URL
 
 internal class DownloadFileUseCase {
 
-    fun download(fileUrl: String, fileNameWithExtension: String, folderPath:String = Environment.getExternalStoragePublicDirectory(
-        Environment.DIRECTORY_DOWNLOADS).path): String? {
+    suspend fun download(fileUrl: String, fileNameWithExtension: String, folderPath:String = Environment.getExternalStoragePublicDirectory(
+        Environment.DIRECTORY_DOWNLOADS).path): String? = withContext(Dispatchers.IO){
         try {
             val url = URL(fileUrl)
             val inputStream: InputStream = url.openStream()
@@ -21,17 +23,17 @@ internal class DownloadFileUseCase {
             while (dis.read(buffer).also { length = it } > 0) {
                 fos.write(buffer, 0, length)
             }
-            return "${folderPath}+/+${fileNameWithExtension}"
+            "${folderPath}+/+${fileNameWithExtension}"
         } catch (mue: MalformedURLException) {
             //TODO: improve LOG
             Log.e("SYNC getUpdate", "malformed url error", mue)
-            return null
+            null
         } catch (ioe: IOException) {
             Log.e("SYNC getUpdate", "io error", ioe)
-            return null
+            null
         } catch (se: SecurityException) {
             Log.e("SYNC getUpdate", "security error", se)
-            return null
+            null
         }
     }
 }

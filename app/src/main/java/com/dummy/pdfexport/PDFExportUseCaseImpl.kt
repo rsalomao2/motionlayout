@@ -1,12 +1,14 @@
 package com.dummy.pdfexport
 
+import android.Manifest
 import com.dummy.PermissionController
 import com.dummy.repository.TestsController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 internal class PDFExportUseCaseImpl(
     private val downloadFileUseCase: DownloadFileUseCase,
-    private val permissionController: PermissionController,
 //        private val shareContentUseCase: ShareContentUseCase,
     private val testResultsController: TestsController
 ) : PDFExportUseCase {
@@ -14,9 +16,9 @@ internal class PDFExportUseCaseImpl(
         const val FILE_NAME = "HT_RESULTS.pdf"
     }
 
-    override suspend fun getResultsPdf(userName: String): String? {
+    override suspend fun getResultsPdf(userName: String): String? = withContext(Dispatchers.IO) {
         val testsResultsPDFUrl = testResultsController.getTestsResultsPDF(userName)
-        return downloadFileUseCase.download(testsResultsPDFUrl, "${userName}_$FILE_NAME")
+        downloadFileUseCase.download(testsResultsPDFUrl, "${userName}_$FILE_NAME")
     }
 }
 
