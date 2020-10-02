@@ -8,7 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.dummy.PermissionController
 import com.dummy.R
-import com.dummy.pdfexport.DownloadFileUseCase
+import com.dummy.pdfexport.DownloadFileUseCaseImpl
 import com.dummy.pdfexport.PDFExportUseCaseImpl
 import com.dummy.repository.TestsController
 import kotlinx.android.synthetic.main.fragment_pdf_export.*
@@ -16,7 +16,7 @@ import kotlinx.android.synthetic.main.fragment_pdf_export.*
 
 class PDFExportFragment : Fragment(R.layout.fragment_pdf_export) {
     private val testsController by lazy { TestsController() }
-    private val downloadFileUseCase by lazy { DownloadFileUseCase() }
+    private val downloadFileUseCase by lazy { DownloadFileUseCaseImpl() }
     private val pdfExportUseCase by lazy {
         PDFExportUseCaseImpl(
             downloadFileUseCase,
@@ -49,6 +49,9 @@ class PDFExportFragment : Fragment(R.layout.fragment_pdf_export) {
 
     private fun setupObservers() {
         pdfViewModel.pdfDownloadedPath.observe(viewLifecycleOwner) {
+            Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+        }
+        pdfViewModel.errorMessage.observe(viewLifecycleOwner) {
             Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         }
     }
