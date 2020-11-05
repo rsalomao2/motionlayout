@@ -7,11 +7,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dummy.domain.Status
-import com.dummy.pdfexport.PDFExportUseCase
+import com.dummy.domain.PDFExportUseCase
 import kotlinx.coroutines.launch
 
 internal class PDFExportViewModel(private val pdfExportUseCase: PDFExportUseCase) : ViewModel() {
-    val pdfDownloadedPath = MutableLiveData<String?>()
     val errorMessage = MutableLiveData<String>()
     private val downloadFolderPath = Environment.getExternalStoragePublicDirectory(
         Environment.DIRECTORY_DOWNLOADS
@@ -20,9 +19,10 @@ internal class PDFExportViewModel(private val pdfExportUseCase: PDFExportUseCase
     @RequiresPermission(permission.WRITE_EXTERNAL_STORAGE)
     fun downloadPDF() {
         viewModelScope.launch {
-            when (val downloadResult = pdfExportUseCase.getResultsPdf("", downloadFolderPath)) {
-                is Status.Success -> pdfDownloadedPath.value = downloadResult.response
-                is Status.Error -> errorMessage.value = downloadResult.responseError
+            val result = pdfExportUseCase.exportPdf("", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path, "test.pdf")
+            when(result){
+                is Status.Success -> errorMessage.value = result.response!!
+                is Status.Error -> errorMessage.value = result.responseError
             }
         }
     }

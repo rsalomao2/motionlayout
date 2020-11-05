@@ -1,23 +1,43 @@
 package com.dummy.pdfexport
 
+import com.dummy.domain.CoroutineContextProvider
+import com.dummy.domain.PDFExportUseCase
 import com.dummy.domain.Status
-import com.dummy.repository.TestsController
-import kotlinx.coroutines.Dispatchers
+import com.dummy.domain.StoreFileUseCase
+import com.dummy.repository.DownloadFileRepository
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 
 
 internal class PDFExportUseCaseImpl(
-    private val downloadFileUseCase: DownloadFileUseCase,
-    private val testResultsController: TestsController
+    private val contextProvider: CoroutineContextProvider,
+    private val downloadFileRepository: DownloadFileRepository,
+    private val storeFileUseCase: StoreFileUseCase
 ) : PDFExportUseCase {
-    companion object {
-        const val FILE_NAME = "HT_RESULTS.pdf"
+
+    override suspend fun exportPdf(
+        userName: String,
+        folderPath: String,
+        fileName: String
+    ) = withContext(contextProvider.IO) {
+        try {
+            when (val response = downloadFileRepository.download()) {
+                is Status.Success -> {
+                    val responseBody = response.response
+                    storeFileLocally(responseBody, folderPath, fileName)
+                }
+                is Status.Error -> Status.Error(response.responseError)
+            }
+        } catch (exception: Exception) {
+            Status.Error(exception.message ?: "")
+        }
     }
 
-
-    override suspend fun getResultsPdf(userName: String, folderPath: String): Status<String> =
-        withContext(Dispatchers.IO) {
-            val testsResultsPDFUrl = testResultsController.getTestsResultsPDF(userName)
-            downloadFileUseCase.download(testsResultsPDFUrl, "${userName}_$FILE_NAME", folderPath)
-        }
+    private suspend fun storeFileLocally(
+        responseBody: ResponseBody,
+        folderPath: String,
+        fileName: String
+    ) = withContext(contextProvider.DEFAULT) {
+        storeFileUseCase.store(responseBody, folderPath, fileName)
+    }
 }
