@@ -5,42 +5,30 @@ import com.dummy.domain.Status
 import com.dummy.domain.StoreFileUseCase
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
-import java.io.*
+import java.io.File
+import java.io.IOException
 
-class StoreFileUseCaseImpl(
-    private val contextProvider: CoroutineContextProvider,
-    private val notifyProgress: (Int)-> Unit
-
-) : StoreFileUseCase {
+class StoreFileUseCaseImpl(private val contextProvider: CoroutineContextProvider) : StoreFileUseCase {
 
     @Suppress("BlockingMethodInNonBlockingContext")
-    override suspend fun store(responseBody: ResponseBody, locationPath: String, fileName: String): Status<String> = withContext(contextProvider.DEFAULT) {
-        var inputStream: InputStream? = null
-        var outputStream: OutputStream? = null
-        val data = ByteArray(1024)
-        var count: Int
-        var progress = 0.0
-        var percentage: Double
-        val fileSize = responseBody.contentLength()
+    override suspend fun store(
+        responseBody: ResponseBody,
+        locationPath: String,
+        fileName: String
+    ): Status<String> = withContext(contextProvider.DEFAULT) {
+
         val destinationFile = File(locationPath, fileName)
+        val inputStream = responseBody.byteStream()
+
         try {
-            inputStream = responseBody.byteStream()
-            outputStream = FileOutputStream(destinationFile)
-            while (inputStream.read(data).also { count = it } != -1) {
-                outputStream.write(data, 0, count)
-                progress += count
-                percentage = (progress / fileSize) * 100
-                notifyProgress.invoke(percentage.toInt())
+            inputStream.use {
+                destinationFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
             }
-            outputStream.flush()
             Status.Success(destinationFile.path)
         } catch (e: IOException) {
-            e.printStackTrace()
-            notifyProgress.invoke(0)
-            Status.Error(e.message?: "Unable to save file")
-        } finally {
-            inputStream?.close()
-            outputStream?.close()
+            Status.Error(e.message ?: "Unable to save file")
         }
     }
 }
